@@ -10,5 +10,5 @@ data class ProductEntity (
     val name: String?,
     val description: String?,
     val price: Double?,
-    val image: Bitmap?,
+    val image: Bitmap?
 )
