@@ -14,15 +14,16 @@ abstract class ProductDatabase: RoomDatabase(){
 
     companion object {
         var instance: ProductDatabase? = null
-        fun getDatabase(context: Context): ProductDatabase? {
-            if (instance == null) {
-                instance = Room.databaseBuilder(
+        fun getDatabase(context: Context): ProductDatabase {
+            var tmpInstance = instance
+            if (tmpInstance == null) {
+                tmpInstance = Room.databaseBuilder(
                     context = context,
                     klass = ProductDatabase::class.java,
                     name = "product-database"
                 ).build()
             }
-            return instance
+            return tmpInstance
         }
     }
 }

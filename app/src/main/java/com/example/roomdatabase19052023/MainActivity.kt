@@ -3,26 +3,30 @@ package com.example.roomdatabase19052023
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import com.example.roomdatabase19052023.data.database.ProductDatabase
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.example.roomdatabase19052023.data.repository.ProductRepository
+import com.example.roomdatabase19052023.presentation.viewmodel.MainViewModel
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var mainViewModel: MainViewModel
+    private lateinit var productRepository: ProductRepository
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        CoroutineScope(Dispatchers.Main).launch {
-            val productDatabase = ProductDatabase.getDatabase(this@MainActivity)
-            val productDAO = productDatabase?.productDAO()
-            try {
-                val listProduct = async { productDAO?.getProduct() }.await()
-                Log.d("BBB", listProduct?.size.toString())
-            } catch(e: Exception) {
-
+        productRepository = ProductRepository(this)
+        mainViewModel = ViewModelProvider(this@MainActivity, object : ViewModelProvider.Factory{
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return MainViewModel(productRepository) as T
             }
+        })[MainViewModel::class.java]
+
+        mainViewModel.listProductsLiveData().observe(this) {
+            Log.d("BBB", it.size.toString())
         }
+
+        mainViewModel.getListProducts()
     }
 }
