@@ -9,5 +9,5 @@ interface ProductDAO {
 
     // Get data from database
     @Query("SELECT * FROM product")
-    fun getProduct(): LiveData<List<ProductEntity>>
+    suspend fun getProduct(): List<ProductEntity>
 }
