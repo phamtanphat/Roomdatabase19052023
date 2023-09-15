@@ -3,6 +3,7 @@ package com.example.roomdatabase19052023.presentation.viewmodel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.roomdatabase19052023.common.AppResource
 import com.example.roomdatabase19052023.data.database.ProductEntity
 import com.example.roomdatabase19052023.data.repository.ProductRepository
 import com.example.roomdatabase19052023.extension.launchOnMain
@@ -18,20 +19,19 @@ class MainViewModel(
     private val coroutineJob = Job()
     private val coroutineScope = CoroutineScope(Dispatchers.IO + coroutineJob)
 
-    private val liveDataError = MutableLiveData<String>()
-    private val liveDataListProducts = MutableLiveData<List<ProductEntity>>()
+    private val liveDataListProducts = MutableLiveData<AppResource<List<ProductEntity>>>()
 
-    fun errorLiveData(): LiveData<String> = liveDataError
-    fun listProductsLiveData(): LiveData<List<ProductEntity>> = liveDataListProducts
+    fun listProductsLiveData(): LiveData<AppResource<List<ProductEntity>>> = liveDataListProducts
 
     fun getListProducts() {
+        liveDataListProducts.value = AppResource.Loading()
         coroutineScope.launch {
             try {
                 val deferred = async { productRepository.getListProducts() }
                 val listProducts = deferred.await()
-                launchOnMain { liveDataListProducts.value = listProducts }
+                launchOnMain { liveDataListProducts.value = AppResource.Success(listProducts) }
             } catch (e: Exception) {
-                launchOnMain { liveDataError.value = e.message }
+                launchOnMain { liveDataListProducts.value = AppResource.Error(e.message ?: "") }
             }
         }
     }

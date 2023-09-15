@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.roomdatabase19052023.common.AppResource
 import com.example.roomdatabase19052023.data.repository.ProductRepository
 import com.example.roomdatabase19052023.presentation.viewmodel.MainViewModel
 
@@ -24,7 +25,11 @@ class MainActivity : AppCompatActivity() {
         })[MainViewModel::class.java]
 
         mainViewModel.listProductsLiveData().observe(this) {
-            Log.d("BBB", it.size.toString())
+            when (it) {
+                is AppResource.Success -> Log.d("BBB", it.data?.size.toString())
+                is AppResource.Error ->Log.d("BBB", it.message.toString())
+                is AppResource.Loading -> Log.d("BBB", "Loading")
+            }
         }
 
         mainViewModel.getListProducts()
