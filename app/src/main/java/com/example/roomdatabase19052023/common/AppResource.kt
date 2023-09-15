@@ -6,5 +6,4 @@ sealed class AppResource<T>(
 ) {
     class Success<T>(data: T) : AppResource<T>(data)
     class Error<T>(message: String) : AppResource<T>(message = message)
-    class Loading<T> : AppResource<T>()
 }

@@ -1,12 +1,17 @@
 package com.example.roomdatabase19052023.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.roomdatabase19052023.common.AppResource
 import com.example.roomdatabase19052023.data.database.ProductEntity
 import com.example.roomdatabase19052023.data.repository.ProductRepository
+import com.example.roomdatabase19052023.extension.launchIO
 import com.example.roomdatabase19052023.extension.launchOnMain
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -15,23 +20,45 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(
     private val productRepository: ProductRepository
-): ViewModel() {
-    private val coroutineJob = Job()
-    private val coroutineScope = CoroutineScope(Dispatchers.IO + coroutineJob)
-
+) : ViewModel() {
     private val liveDataListProducts = MutableLiveData<AppResource<List<ProductEntity>>>()
+    private val liveDataInsert = MutableLiveData<AppResource<Any?>>()
+    private val liveDataLoading = MutableLiveData<Boolean>()
 
     fun listProductsLiveData(): LiveData<AppResource<List<ProductEntity>>> = liveDataListProducts
+    fun insertLiveData(): LiveData<AppResource<Any?>> = liveDataInsert
 
     fun getListProducts() {
-        liveDataListProducts.value = AppResource.Loading()
-        coroutineScope.launch {
+        liveDataLoading.value = true
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val deferred = async { productRepository.getListProducts() }
                 val listProducts = deferred.await()
                 launchOnMain { liveDataListProducts.value = AppResource.Success(listProducts) }
             } catch (e: Exception) {
                 launchOnMain { liveDataListProducts.value = AppResource.Error(e.message ?: "") }
+            } finally {
+                launchOnMain { liveDataLoading.value = false }
+            }
+        }
+    }
+
+    fun insertProduct(productEntity: ProductEntity) {
+        liveDataLoading.value = true
+        viewModelScope.launch(Dispatchers.IO) {
+            val jobInsert = launch {
+                try {
+                    productRepository.insertProduct(productEntity)
+                } catch (e: Exception) {
+                    launchOnMain { liveDataInsert.value = AppResource.Error(e.message ?: "") }
+                } finally {
+                    launchOnMain { liveDataLoading.value = false }
+                }
+            }
+            jobInsert.join()
+            launchOnMain {
+                liveDataInsert.value = AppResource.Success(null)
+                liveDataLoading.value = false
             }
         }
     }
