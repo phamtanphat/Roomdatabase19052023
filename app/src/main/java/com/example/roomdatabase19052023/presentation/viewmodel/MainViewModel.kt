@@ -16,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainViewModel(
@@ -27,6 +28,7 @@ class MainViewModel(
 
     fun listProductsLiveData(): LiveData<AppResource<List<ProductEntity>>> = liveDataListProducts
     fun insertLiveData(): LiveData<AppResource<Any?>> = liveDataInsert
+    fun loadingLiveData(): LiveData<Boolean> = liveDataLoading
 
     fun getListProducts() {
         liveDataLoading.value = true
@@ -44,21 +46,18 @@ class MainViewModel(
     }
 
     fun insertProduct(productEntity: ProductEntity) {
-        liveDataLoading.value = true
+        liveDataLoading.value = false
         viewModelScope.launch(Dispatchers.IO) {
-            val jobInsert = launch {
+            delay(1500)
+            launch {
                 try {
                     productRepository.insertProduct(productEntity)
+                    launchOnMain { liveDataInsert.value = AppResource.Success(null) }
                 } catch (e: Exception) {
                     launchOnMain { liveDataInsert.value = AppResource.Error(e.message ?: "") }
                 } finally {
-                    launchOnMain { liveDataLoading.value = false }
+                    launchOnMain { liveDataLoading.value = true }
                 }
-            }
-            jobInsert.join()
-            launchOnMain {
-                liveDataInsert.value = AppResource.Success(null)
-                liveDataLoading.value = false
             }
         }
     }
